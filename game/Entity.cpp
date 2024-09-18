@@ -3629,22 +3629,22 @@ inflictor, attacker, dir, and point can be NULL for environmental effects
 
 ============
 */
-void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
-					  const char *damageDefName, const float damageScale, const int location ) {
-	if ( forwardDamageEnt.IsValid() ) {
-		forwardDamageEnt->Damage( inflictor, attacker, dir, damageDefName, damageScale, location );
+void idEntity::Damage(idEntity* inflictor, idEntity* attacker, const idVec3& dir,
+	const char* damageDefName, const float damageScale, const int location) {
+	if (forwardDamageEnt.IsValid()) {
+		forwardDamageEnt->Damage(inflictor, attacker, dir, damageDefName, damageScale, location);
 		return;
 	}
 
-	if ( !fl.takedamage ) {
+	if (!fl.takedamage) {
 		return;
 	}
 
-	if ( !inflictor ) {
+	if (!inflictor) {
 		inflictor = gameLocal.world;
 	}
 
-	if ( !attacker ) {
+	if (!attacker) {
 		attacker = gameLocal.world;
 	}
 

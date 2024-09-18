@@ -10150,10 +10150,10 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	knockback *= damageScale;
 
 	if ( knockback != 0 && !fl.noknockback ) {
-		if ( !gameLocal.isMultiplayer && attacker == this ) {
+		//if ( !gameLocal.isMultiplayer && attacker == this ) { //don't tell m
 			//In SP, no knockback from your own stuff
-			knockback = 0;
-		} else {
+			//knockback = 0;
+		//} else {
 			if ( attacker != this ) {
 				attackerPushScale = 1.0f;	
 			} else {
@@ -10170,7 +10170,10 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 
 			// set the timer so that the player can't cancel out the movement immediately
  			physicsObj.SetKnockBack( idMath::ClampInt( 50, 200, knockback * 2 ) );
-		}
+		//}
+			if( this == attacker){
+				return;
+			}
 	}
 	
 	if ( damageDef->dict.GetBool( "burn" ) ) {
@@ -10193,7 +10196,7 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	ClientDamageEffects ( damageDef->dict, dir, damage );
 
  	// inform the attacker that they hit someone
- 	attacker->DamageFeedback( this, inflictor, damage );
+	attacker->DamageFeedback( this, inflictor, damage );
 	
 //RAVEN BEGIN
 //asalmon: Xenon needs stats in singleplayer
@@ -10301,7 +10304,7 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 			blink_time = 0;
 
 			// let the anim script know we took damage
- 			pfl.pain = Pain( inflictor, attacker, damage, dir, location );
+			pfl.pain = Pain(inflictor, attacker, damage, dir, location);
 			if ( !g_testDeath.GetBool() ) {
 				lastDmgTime = gameLocal.time;
 			}

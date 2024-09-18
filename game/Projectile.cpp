@@ -734,8 +734,8 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 	}
 
 	// Can the projectile damage?  
-	canDamage = ent->fl.takedamage && !(( collision.c.material != NULL ) && ( collision.c.material->GetSurfaceFlags() & SURF_NODAMAGE ));
-  
+	canDamage = ent->fl.takedamage && !((collision.c.material != NULL) && (collision.c.material->GetSurfaceFlags() & SURF_NODAMAGE));
+ 
  	// direction of projectile
  	dir = velocity;
  	dir.Normalize();

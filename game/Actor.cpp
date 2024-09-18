@@ -2532,7 +2532,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		}
 	} else {
 		// don't accumulate knockback
-		/*
+		///*
 		if ( af.IsLoaded() ) {
 			// clear impacts
 			af.Rest();
@@ -2540,7 +2540,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 			// physics is turned off by calli/ng af.Rest()
 			BecomeActive( TH_PHYSICS );
 		}
-		*/
+		//*/
 	}
 }
 

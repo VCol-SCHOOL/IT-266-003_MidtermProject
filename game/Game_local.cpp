@@ -5739,9 +5739,14 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 		}
 
 		// Dont damage inflictor or the ignore entity
-		if( ent == inflictor || ent == ignoreDamage ) {
+		if( ent == inflictor || ent == ignoreDamage) {
 			continue;
 		}
+
+		// Dont damage the player if it's their own rockets
+		/*if (ent == attacker && attacker->IsType(idPlayer::GetClassType())) { //no knockback
+			continue;
+		}*/
 
 		idBounds absBounds = clipModel->GetAbsBounds();
 
@@ -5795,7 +5800,8 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 			}
 
 			dir.Normalize();
-			ent->Damage( inflictor, attacker, dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE(ent->GetPhysics()->GetClipModel()->GetId()) );
+			
+			ent->Damage( inflictor, attacker, dir*4, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE(ent->GetPhysics()->GetClipModel()->GetId()) );
 
 			// for stats, count the first 
 			if( attacker && attacker->IsType( idPlayer::GetClassType() ) && inflictor && inflictor->IsType( idProjectile::GetClassType() ) && ent->IsType( idPlayer::GetClassType() ) && hitCount ) {

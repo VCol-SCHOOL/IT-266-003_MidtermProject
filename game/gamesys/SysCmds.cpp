@@ -2930,6 +2930,15 @@ void Cmd_ToggleBuyMenu_f( const idCmdArgs& args ) {
 	}
 }
 
+void Cmd_Locate_f(const idCmdArgs& args) {
+	idVec3 position;
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player) return;
+
+	position = player->GetEyePosition();
+	common->Printf("Player is at (%f, %f, %f)\n", position.x, position.y, position.z);
+}
+
 void Cmd_BuyItem_f( const idCmdArgs& args ) {
 	idPlayer* player = gameLocal.GetLocalPlayer();
 	if ( !player ) {
@@ -3231,6 +3240,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 // squirrel: Mode-agnostic buymenus
 	cmdSystem->AddCommand( "buyMenu",				Cmd_ToggleBuyMenu_f,		CMD_FL_GAME,				"Toggle buy menu (if in a buy zone and the game type supports it)" );
 	cmdSystem->AddCommand( "buy",					Cmd_BuyItem_f,				CMD_FL_GAME,				"Buy an item (if in a buy zone and the game type supports it)" );
+	cmdSystem->AddCommand( "locate",				Cmd_Locate_f,				CMD_FL_GAME,				"Get the player's position"); //mine
 // RITUAL END
 
 }
