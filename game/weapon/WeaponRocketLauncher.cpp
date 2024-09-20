@@ -346,6 +346,7 @@ stateResult_t rvWeaponRocketLauncher::State_Raise ( const stateParms_t& parms ) 
 		case STAGE_INIT:
 			SetStatus ( WP_RISING );
 			PlayAnim( ANIMCHANNEL_LEGS, "raise", 0 );
+			Attack(false, 12, spread, 0, 1.0f); //hip-shot rocket
 			return SRESULT_STAGE ( STAGE_WAIT );
 			
 		case STAGE_WAIT:
@@ -446,7 +447,7 @@ stateResult_t rvWeaponRocketLauncher::State_Fire ( const stateParms_t& parms ) {
 	switch ( parms.stage ) {
 		case STAGE_INIT:
 			nextAttackTime = gameLocal.time + (fireRate * owner->PowerUpModifier ( /*PMOD_FIRERATE*/ 6 ));
-			Attack ( false, 4, spread, 0, 1.0f );
+			Attack ( false, 8, spread, 0, 1.0f );
 			PlayAnim ( ANIMCHANNEL_LEGS, "fire", parms.blendFrames );	
 			return SRESULT_STAGE ( STAGE_WAIT );
 	
