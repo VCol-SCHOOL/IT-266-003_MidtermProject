@@ -1154,6 +1154,13 @@ private:
 	stateResult_t			State_Legs_Land					( const stateParms_t& parms );
 	stateResult_t			State_Legs_Dead					( const stateParms_t& parms );
 	
+	idEntity* poisoner;
+	float posionDamage;
+	uint32_t poisonCoolDown;
+	uint32_t poisonCoolDownMax;
+	uint32_t poisonTTL;
+
+
  	CLASS_STATES_PROTOTYPE( idPlayer );
 };
 

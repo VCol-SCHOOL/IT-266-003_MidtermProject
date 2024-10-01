@@ -9505,6 +9505,18 @@ void idPlayer::Think( void ) {
 // RAVEN END
 
 	Move();
+	if (poisonTTL) 
+	{
+		if (!poisonCoolDown)
+		{
+			idVec3 dir = {};
+			poisonCoolDown = poisonCoolDownMax;
+			Damage(poisoner, poisoner, dir, "damage_poison", 1.0, 0);
+			poisonTTL--;
+		}
+		else
+			poisonCoolDown--;
+	}
 
 	if ( !g_stopTime.GetBool() ) {
  		if ( !noclip && !spectating && ( health > 0 ) && !IsHidden() ) {
@@ -10171,9 +10183,9 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 			// set the timer so that the player can't cancel out the movement immediately
  			physicsObj.SetKnockBack( idMath::ClampInt( 50, 200, knockback * 2 ) );
 		//}
-			if( this == attacker){
+			/*if (this == attacker) {
 				return;
-			}
+			}*/
 	}
 	
 	if ( damageDef->dict.GetBool( "burn" ) ) {
@@ -10243,9 +10255,26 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 			if ( damageDef->dict.GetString( "snd_dot_start", NULL ) ) {
 				StartSound ( "snd_dot_start", SND_CHANNEL_ANY, 0, false, NULL );
 			}
+
 		}
 	}
 // RAVEN END
+	const idDict* damageDict = gameLocal.FindEntityDefDict(damageDefName, false);
+	if (damageDict) 
+	{
+		const char* poisonDef = damageDict->GetString("poisonDef", "");
+		if ((poisonDef) && strlen(poisonDef))
+		{
+			const idDict* poison = gameLocal.FindEntityDefDict(poisonDef, false);
+			if (poison) 
+			{
+				poisonCoolDownMax = poison->GetInt("cooldown", "0");
+				poisonTTL = poison->GetInt("cooldown", "0");
+				poisoner = attacker;
+
+			}
+		}
+	}
 
 	// do the damage
 	if ( damage > 0 ) {
