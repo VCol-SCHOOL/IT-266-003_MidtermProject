@@ -4085,6 +4085,7 @@ void idPlayer::FireWeapon( void ) {
 		return;
 	}
 
+
 	if ( g_editEntityMode.GetInteger() ) {
 		GetViewPos( muzzle, axis );
 		gameLocal.editEntities->SelectEntity( muzzle, axis[0], this );	
@@ -4097,7 +4098,7 @@ void idPlayer::FireWeapon( void ) {
 		bool noFireWhileSwitching = false;
 		noFireWhileSwitching = ( gameLocal.isMultiplayer && idealWeapon != currentWeapon && weapon->NoFireWhileSwitching() );
 		if ( !noFireWhileSwitching ) {
-			if ( weapon->AmmoInClip() || weapon->AmmoAvailable() ) {
+			if (weapon->AmmoInClip() || weapon->AmmoAvailable()) {
 				pfl.attackHeld = true;
 				weapon->BeginAttack();
 			} else {
@@ -8705,7 +8706,7 @@ void idPlayer::AdjustSpeed( void ) {
 
 	speed *= PowerUpModifier(PMOD_SPEED);
 
-	if ( influenceActive == INFLUENCE_LEVEL3 ) {
+	if ( influenceActive == INFLUENCE_LEVEL3) {
 		speed *= 0.33f;
 	}
 
@@ -11833,7 +11834,7 @@ void idPlayer::LocalClientPredictionThink( void ) {
 		
 		return;
 	}
-
+	
 	AdjustSpeed();
 
 	UpdateViewAngles();
@@ -12025,7 +12026,7 @@ void idPlayer::NonLocalClientPredictionThink( void ) {
 		return;
 	}
 #endif
-
+	
 	AdjustSpeed();
 
 	UpdateViewAngles();

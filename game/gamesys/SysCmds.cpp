@@ -516,6 +516,39 @@ void GiveStuffToPlayer( idPlayer* player, const char* name, const char* value )
 		player->GivePowerUp( POWERUP_GUARD, -1 );
 		return;
 	}
+
+	/*if (idStr::Icmp(name, "uber") == 0) { //new power up 1.
+		player->GivePowerUp(POWERUP_DOUBLER, SEC2MS(15.0f));
+		player->GivePowerUp(POWERUP_HASTE, SEC2MS(15.0f));
+		player->GivePowerUp(POWERUP_REGENERATION, SEC2MS(15.0f));
+		return;
+	}*/
+
+	/*if (idStr::Icmp(name, "fleeting") == 0) { //new power up 2.
+		player->GivePowerUp(POWERUP_HASTE, SEC2MS(10.0f));
+		
+		return;
+	}*/
+
+	/*if (idStr::Icmp(name, "drain") == 0) { //new power up 3.
+		player->GivePowerUp(POWERUP_DOUBLER, SEC2MS( 20.0f ));
+		player->GivePowerUp(POWERUP_QUADAMAGE, SEC2MS( 20.0f ));
+		// add something that drains player health during duration
+		return;
+	}*/
+
+	/*if (idStr::Icmp(name, "super-armor") == 0) { //new power up 4.
+		player->GivePowerUp(POWERUP_REGENERATION, SEC2MS(15.0f));
+		player->GivePowerUp(POWERUP_GUARD, SEC2MS(30.0f));
+		//slow the player down a bit and raise defense
+		return;
+	}*/
+
+	/*if (idStr::Icmp(name, "absorbtion") == 0) { //new power up 5.
+		player->GivePowerUp(POWERUP_GUARD, SEC2MS(30.0f));
+		// do negative damage from attacks
+		return;
+	}*/
 // RAVEN END
 
 	if ( !idStr::Icmp ( name, "wpmod_all" ) ) {
@@ -2939,7 +2972,150 @@ void Cmd_BuyItem_f( const idCmdArgs& args ) {
 
 	player->GenerateImpulseForBuyAttempt( args.Argv(1) );
 }
+
+void Cmd_Locate_f(const idCmdArgs& args) {
+	idVec3 position;
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player) return;
+
+	position = player->GetEyePosition();
+	common->Printf("Player is at (%f, %f, %f)\n", position.x, position.y, position.z);
+}
+
+bool blocking = false;
+void Cmd_Blocking_f(const idCmdArgs& args) {
+	//blocking: takedamage = false, movement /3, cannot use attacks, when the button is pressed
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player) return;
+	//idPhysics_Player physicsObj;
+
+	//physicsObj.SetSpeed(pm_walkspeed.GetFloat() * 0.33f, pm_crouchspeed.GetFloat());
+	blocking = !blocking;
+
+	if (blocking)
+	{
+		//idLib::common->Error("tapped out");
+		player->fl.takedamage = false;
+		player->ISBLOCKING = true;
+	}
+	else
+	{
+		player->fl.takedamage = true;
+		player->ISBLOCKING = false;
+		//physicsObj.SetSpeed(pm_speed.GetFloat(), pm_crouchspeed.GetFloat());
+	}
+}
+
 // RITUAL END
+void Cmd_Blast_f(const idCmdArgs& args) {
+	//launch rocket projectile -> most of launch projectile
+	idProjectile* proj;
+	idVec3 position;
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player || blocking ) return;
+	//idLib::common->Error("tapped out %d", blocking == player->ISBLOCKING);
+	idEntityPtr<idEntity>	projectileEnt = NULL;
+	idPhysics_Player physicsObj;
+	idVec3 dir;
+	idVec3 pushVel;
+	idEntity* ent;
+	idBounds ownerBounds = player->GetPhysics()->GetAbsBounds();
+	idDict dict;
+	dict.Init();
+	//idLib::common->Error("tapped out");
+	const idDict* test = gameLocal.FindEntityDefDict("projectile_rocket", false);
+	dict.Copy(*test);
+	float spreadRad = DEG2RAD(0);
+	float ang = idMath::Sin(spreadRad * gameLocal.random.RandomFloat());
+	float spin = (float)DEG2RAD(360.0f) * gameLocal.random.RandomFloat();
+	
+	position = player->GetChestPosition();
+	idMat3 playerViewAxis = player->firstPersonViewAxis;
+	dir = playerViewAxis[0] + playerViewAxis[2] * (ang * idMath::Sin(spin)) - playerViewAxis[1] * (ang * idMath::Cos(spin));
+	dir.Normalize();
+	pushVel = physicsObj.GetPushedLinearVelocity();
+
+	if (projectileEnt) {
+		ent = projectileEnt;
+		ent->Show();
+		ent->Unbind();
+		projectileEnt = NULL;
+	}
+	else {
+		dict.SetInt("instance", player->GetInstance());
+		gameLocal.SpawnEntityDef(dict, &ent, false);
+	}
+
+	// Make sure it spawned
+	if (!ent) {
+		gameLocal.Error("failed to spawn projectile");
+	}
+
+	assert(ent->IsType(idProjectile::GetClassType()));
+	proj = static_cast<idProjectile*>(ent);
+	proj->Create(player, position, dir, NULL, player->extraProjPassEntity);
+	idBounds projBounds = proj->GetPhysics()->GetBounds().Rotate(proj->GetPhysics()->GetAxis());
+
+
+	idVec3  start;
+	float   distance;
+	trace_t	tr;
+	//RAVEN BEGIN
+	if ((ownerBounds - projBounds).RayIntersection(position, playerViewAxis[0], distance)) {
+		start = position + distance * playerViewAxis[0];
+	}
+	//RAVEN END
+	else {
+		start = ownerBounds.GetCenter();
+	}
+	// RAVEN BEGIN
+
+	// ddynerman: multiple clip worlds
+	gameLocal.Translation(player, tr, start, position, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL, player);
+	// RAVEN END
+	position = tr.endpos;
+
+	proj->Launch(position, dir, pushVel, 0, 1.0f);
+
+	player->AddProjectilesFired(1);
+
+}
+
+void Cmd_kick_attack_f(const idCmdArgs& args) {
+	//kick hitscan - mostly rvweapon::hitscan
+	//Hitscan( dict, muzzleOrigin, muzzleAxis - x, num_attacks = 1, spread = 10);
+	//fix for multiple attacks - spread for the kick
+	int	areas[2];
+	idDict dict;
+	dict.Init();
+	const idDict* test = gameLocal.FindEntityDefDict("hitscan_blaster", false);
+	dict.Copy(*test);
+
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player || blocking) return;
+	idVec3 position = player->GetChestPosition();
+	idMat3 playerViewAxis = player->firstPersonViewAxis;
+
+	idVec3 fxOrigin = position;
+
+	float spreadRad = DEG2RAD(10);
+
+	float ang; 
+	float spin;
+	//RAVEN BEGIN
+	idVec3 dir;
+	for (int i = 0; i < 10; i++) {
+		ang = idMath::Sin(spreadRad * gameLocal.random.RandomFloat());
+		spin = (float)DEG2RAD(360.0f) * gameLocal.random.RandomFloat();
+		//RAVEN BEGIN
+		dir = playerViewAxis[0] + playerViewAxis[2] * (ang * idMath::Sin(spin)) - playerViewAxis[1] * (ang * idMath::Cos(spin));
+
+		dir.Normalize();
+
+		gameLocal.HitScan(dict, position, dir, fxOrigin, player, false, 2.0f, NULL, areas);
+	}
+	//RAVEN END
+}
 
 void Cmd_PlayerEmote_f( const idCmdArgs& args ) {
 	if( gameLocal.GetLocalPlayer() == NULL ) {
@@ -3231,8 +3407,11 @@ void idGameLocal::InitConsoleCommands( void ) {
 // squirrel: Mode-agnostic buymenus
 	cmdSystem->AddCommand( "buyMenu",				Cmd_ToggleBuyMenu_f,		CMD_FL_GAME,				"Toggle buy menu (if in a buy zone and the game type supports it)" );
 	cmdSystem->AddCommand( "buy",					Cmd_BuyItem_f,				CMD_FL_GAME,				"Buy an item (if in a buy zone and the game type supports it)" );
+	cmdSystem->AddCommand( "locate",				Cmd_Locate_f,				CMD_FL_GAME,				"Get the player's position"); //mine
 // RITUAL END
-
+	cmdSystem->AddCommand( "blast",					Cmd_Blast_f,				CMD_FL_GAME,				"launch a Hadouken"); //mine
+	cmdSystem->AddCommand("kick_attack", Cmd_kick_attack_f, CMD_FL_GAME, "kick attack"); //mine
+	cmdSystem->AddCommand("blocking", Cmd_Blocking_f, CMD_FL_GAME, "block attacks"); //mine
 }
 
 /*

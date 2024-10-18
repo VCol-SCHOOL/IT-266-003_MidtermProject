@@ -287,6 +287,7 @@ public:
 	class idPlayerView		playerView;			// handles damage kicks and effects
 
 	bool					alreadyDidTeamAnnouncerSound;
+	bool					ISBLOCKING;
 	bool					noclip;
 	bool					godmode;
 	int						godmodeDamage;

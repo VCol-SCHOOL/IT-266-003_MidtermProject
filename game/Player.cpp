@@ -1081,6 +1081,7 @@ idPlayer::idPlayer() {
 
 	alreadyDidTeamAnnouncerSound = false;
 
+	ISBLOCKING				= false;
 	doInitWeapon			= false;
 	noclip					= false;
 	godmode					= false;
@@ -1498,6 +1499,7 @@ idPlayer::Init
 void idPlayer::Init( void ) {
 	const char			*value;
 	
+	ISBLOCKING				= false;
 	noclip					= false;
 	godmode					= false;
 	godmodeDamage			= 0;
@@ -3987,7 +3989,7 @@ void idPlayer::FireWeapon( void ) {
 		bool noFireWhileSwitching = false;
 		noFireWhileSwitching = ( gameLocal.isMultiplayer && idealWeapon != currentWeapon && weapon->NoFireWhileSwitching() );
 		if ( !noFireWhileSwitching ) {
-			if ( weapon->AmmoInClip() || weapon->AmmoAvailable() ) {
+			if ( (weapon->AmmoInClip() || weapon->AmmoAvailable()) && !ISBLOCKING) {
 				pfl.attackHeld = true;
 				weapon->BeginAttack();
 			} else {
@@ -8744,7 +8746,7 @@ void idPlayer::AdjustSpeed( void ) {
 	} else if ( noclip ) {
 		speed = pm_noclipspeed.GetFloat();
 		bobFrac = 0.0f;
- 	} else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) && ( usercmd.upmove >= 0 ) ) {
+ 	} else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) && ( usercmd.upmove >= 0 ) && !ISBLOCKING) {
 		bobFrac = 1.0f;
 		speed = pm_speed.GetFloat();
 	} else {
@@ -8754,7 +8756,7 @@ void idPlayer::AdjustSpeed( void ) {
 
 	speed *= PowerUpModifier(PMOD_SPEED);
 
-	if ( influenceActive == INFLUENCE_LEVEL3 ) {
+	if ( influenceActive == INFLUENCE_LEVEL3) {
 		speed *= 0.33f;
 	}
 
