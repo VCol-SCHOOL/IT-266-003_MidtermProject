@@ -1082,6 +1082,9 @@ idPlayer::idPlayer() {
 	alreadyDidTeamAnnouncerSound = false;
 
 	ISBLOCKING				= false;
+	DRAIN					= false;
+	ABSORB					= false;
+	G_ARMOR					= false;
 	doInitWeapon			= false;
 	noclip					= false;
 	godmode					= false;
@@ -1500,6 +1503,9 @@ void idPlayer::Init( void ) {
 	const char			*value;
 	
 	ISBLOCKING				= false;
+	DRAIN					= false;
+	G_ARMOR					= false;
+	ABSORB					= false;
 	noclip					= false;
 	godmode					= false;
 	godmodeDamage			= 0;
@@ -4286,11 +4292,11 @@ float idPlayer::PowerUpModifier( int type ) {
 	if ( PowerUpActive( POWERUP_QUADDAMAGE ) ) {
 		switch( type ) {
 			case PMOD_PROJECTILE_DAMAGE: {
-				mod *= 3.0f;
+				mod *= PowerUpActive(POWERUP_DOUBLER) ? 6.0f : 3.0f;
 				break;
 			}
 			case PMOD_MELEE_DAMAGE: {
-				mod *= 3.0f;
+				mod *= PowerUpActive(POWERUP_DOUBLER) ? 6.0f : 3.0f;
 				break;
 			}
 			case PMOD_PROJECTILE_DEATHPUSH: {
@@ -4303,7 +4309,7 @@ float idPlayer::PowerUpModifier( int type ) {
 	if ( PowerUpActive( POWERUP_HASTE ) ) {
 		switch ( type ) {
 			case PMOD_SPEED:	
-				mod *= 1.3f;
+				mod *= 2.5f;
 				break;
 
 			case PMOD_FIRERATE:
@@ -4424,7 +4430,6 @@ void idPlayer::StartPowerUpEffect( int powerup ) {
 		}
 
 		case POWERUP_REGENERATION: {
-
 			// when buy mode is enabled, we use the guard effect for team powerup regen ( more readable than everyone going red )
 			if ( gameLocal.IsTeamPowerups() ) {
 				// don't setup the powerup on dead bodies, it will float up where the body is invisible and the orientation will be messed up
@@ -4867,7 +4872,7 @@ void idPlayer::UpdatePowerUps( void ) {
 			}
 
 			continue;
-		} else if ( inventory.powerupEndTime[ i ] != -1 && gameLocal.isServer ) {
+		} else if ( inventory.powerupEndTime[ i ] != -1 /*&& gameLocal.isServer*/ ) {
 			// This particular powerup needs to respawn in a special way.
 			if ( i == POWERUP_DEADZONE ) {
 				gameLocal.mpGame.GetGameState()->SpawnDeadZonePowerup();
@@ -4886,6 +4891,19 @@ void idPlayer::UpdatePowerUps( void ) {
 		}
 	}
 
+	if ((!PowerUpActive(POWERUP_REGENERATION))) {
+		DRAIN = false;
+	}
+
+	if ((!PowerUpActive(POWERUP_GUARD))) {
+		G_ARMOR = false;
+		ABSORB = false;
+	}
+
+	if ((!PowerUpActive(POWERUP_HASTE))) {
+		fl.takedamage = true;
+	}
+
 	// Reneration regnerates faster when less than maxHealth and can regenerate up to maxHealth * 2
 	if ( gameLocal.time > nextHealthPulse ) {
 // RITUAL BEGIN
@@ -4893,38 +4911,53 @@ void idPlayer::UpdatePowerUps( void ) {
 		if( health > 0 ) {
 			if ( PowerUpActive ( POWERUP_REGENERATION ) || PowerUpActive ( POWERUP_GUARD ) ) {
 				int healthBoundary = inventory.maxHealth; // health will regen faster under this value, slower above
-				int healthTic = 15;
+				int healthTic = 5;
+				if (DRAIN) healthTic *= -1;
+				if (G_ARMOR) healthTic *= 4;
+				if (ABSORB) healthTic = 0;
 
 				if( PowerUpActive ( POWERUP_GUARD ) ) {
 					// guard max health == 200, so set the boundary back to 100
 					healthBoundary = inventory.maxHealth / 2;
 					if( PowerUpActive (POWERUP_REGENERATION) ) {
-						healthTic = 30;
+						healthTic = 10;
 					}
 				}
-
+				//inventory.armor;
 				if ( health < healthBoundary ) {
 					// only actually give health on the server
-					if( gameLocal.isServer ) {
+					//if( gameLocal.isServer ) {
+						if (G_ARMOR) {
+							inventory.armor += healthTic;
+							if (inventory.armor > (inventory.maxarmor * 1.1f)) {
+								inventory.armor = inventory.maxarmor * 1.1f;
+							}
+						}
 						health += healthTic;
 						if ( health > (healthBoundary * 1.1f) ) {
 							health = healthBoundary * 1.1f;
 						}
-					}
+					//}
 					StartSound ( "snd_powerup_regen", SND_CHANNEL_POWERUP, 0, false, NULL );
 					nextHealthPulse = gameLocal.time + HEALTH_PULSE;
-				} else if ( health < (healthBoundary * 2) ) {
-					if( gameLocal.isServer ) {
+				} else if ( (health < (healthBoundary * 2) || (inventory.armor < (inventory.maxarmor * 2))) && PowerUpActive(POWERUP_GUARD) ) {
+					//if( gameLocal.isServer ) {
+						if (G_ARMOR) {
+							inventory.armor += healthTic / 3;
+							if (inventory.armor > (inventory.maxarmor * 2)) {
+								inventory.armor = inventory.maxarmor * 2;
+							}
+						}
 						health += healthTic / 3;
 						if ( health > (healthBoundary * 2) ) {
 							health = healthBoundary * 2;
 						}
-					}
+					//}
 					StartSound ( "snd_powerup_regen", SND_CHANNEL_POWERUP, 0, false, NULL );
 					nextHealthPulse = gameLocal.time + HEALTH_PULSE;
 				}	
 			// Health above max technically isnt a powerup but functions as one so handle it here
-			} else if ( health > inventory.maxHealth && gameLocal.isServer ) { 
+			} else if ( health > inventory.maxHealth /* && gameLocal.isServer */) {
 				nextHealthPulse = gameLocal.time + HEALTH_PULSE;
 				health--;
 			}
@@ -8746,10 +8779,11 @@ void idPlayer::AdjustSpeed( void ) {
 	} else if ( noclip ) {
 		speed = pm_noclipspeed.GetFloat();
 		bobFrac = 0.0f;
- 	} else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) && ( usercmd.upmove >= 0 ) && !ISBLOCKING) {
+ 	} else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) && ( usercmd.upmove >= 0 ) && !ISBLOCKING && !G_ARMOR) {
 		bobFrac = 1.0f;
 		speed = pm_speed.GetFloat();
-	} else {
+	} 
+	else {
 		speed = pm_walkspeed.GetFloat();
 		bobFrac = 0.0f;
 	}
@@ -10263,9 +10297,11 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		if ( damage < 1 ) {
 			damage = 1;
 		}
-
 		int oldHealth = health;
-		health -= damage;
+		if (ABSORB)
+			health += damage;
+		else
+			health -= damage;
 
 		GAMELOG_ADD ( va("player%d_damage_taken", entityNumber ), damage );
 		GAMELOG_ADD ( va("player%d_damage_%s", entityNumber, damageDefName), damage );

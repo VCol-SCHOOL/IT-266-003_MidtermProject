@@ -288,6 +288,9 @@ public:
 
 	bool					alreadyDidTeamAnnouncerSound;
 	bool					ISBLOCKING;
+	bool					DRAIN;
+	bool					G_ARMOR;
+	bool					ABSORB;
 	bool					noclip;
 	bool					godmode;
 	int						godmodeDamage;

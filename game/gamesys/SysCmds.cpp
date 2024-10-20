@@ -517,38 +517,40 @@ void GiveStuffToPlayer( idPlayer* player, const char* name, const char* value )
 		return;
 	}
 
-	/*if (idStr::Icmp(name, "uber") == 0) { //new power up 1.
+	if (idStr::Icmp(name, "uber") == 0) { //new power up 1.
 		player->GivePowerUp(POWERUP_DOUBLER, SEC2MS(15.0f));
 		player->GivePowerUp(POWERUP_HASTE, SEC2MS(15.0f));
 		player->GivePowerUp(POWERUP_REGENERATION, SEC2MS(15.0f));
 		return;
-	}*/
-
-	/*if (idStr::Icmp(name, "fleeting") == 0) { //new power up 2.
-		player->GivePowerUp(POWERUP_HASTE, SEC2MS(10.0f));
-		
+	}
+	if (idStr::Icmp(name, "smooth") == 0) { //new power up 2.
+		player->GivePowerUp(POWERUP_HASTE, SEC2MS(12.0f));
+		player->fl.takedamage = false;
 		return;
-	}*/
+	}
 
-	/*if (idStr::Icmp(name, "drain") == 0) { //new power up 3.
-		player->GivePowerUp(POWERUP_DOUBLER, SEC2MS( 20.0f ));
-		player->GivePowerUp(POWERUP_QUADAMAGE, SEC2MS( 20.0f ));
-		// add something that drains player health during duration
+	if (idStr::Icmp(name, "drain") == 0) { //new power up 3.
+		player->GivePowerUp(POWERUP_DOUBLER, SEC2MS( 10.0f ));
+		player->GivePowerUp(POWERUP_QUADDAMAGE, SEC2MS( 10.0f ));
+		// add something that drains player health during duration - negative regen
+		player->DRAIN = true;
+		player->GivePowerUp(POWERUP_REGENERATION, SEC2MS(10.0f));
 		return;
-	}*/
+	}
 
-	/*if (idStr::Icmp(name, "super-armor") == 0) { //new power up 4.
-		player->GivePowerUp(POWERUP_REGENERATION, SEC2MS(15.0f));
-		player->GivePowerUp(POWERUP_GUARD, SEC2MS(30.0f));
-		//slow the player down a bit and raise defense
+	if (idStr::Icmp(name, "accum") == 0) { //new power up 4.
+		player->GivePowerUp(POWERUP_GUARD, SEC2MS(15.0f));
+		//slow the player down a bit and raise defense - generate armor (bool for this and where haste is)
+		player->G_ARMOR = true;
 		return;
-	}*/
+	}
 
-	/*if (idStr::Icmp(name, "absorbtion") == 0) { //new power up 5.
-		player->GivePowerUp(POWERUP_GUARD, SEC2MS(30.0f));
-		// do negative damage from attacks
+	if (idStr::Icmp(name, "absorb") == 0) { //new power up 5.
+		player->GivePowerUp(POWERUP_GUARD, SEC2MS(10.0f));
+		// do negative damage from attacks - another bool for player
+		player->ABSORB = true;
 		return;
-	}*/
+	}
 // RAVEN END
 
 	if ( !idStr::Icmp ( name, "wpmod_all" ) ) {
