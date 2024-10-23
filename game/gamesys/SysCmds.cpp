@@ -3009,31 +3009,28 @@ void Cmd_Blocking_f(const idCmdArgs& args) {
 }
 
 // RITUAL END
-void Cmd_Blast_f(const idCmdArgs& args) {
+void do_Blast_f(idActor* atk, const idDict* cpy) {
 	//launch rocket projectile -> most of launch projectile
 	idProjectile* proj;
 	idVec3 position;
-	idPlayer* player = gameLocal.GetLocalPlayer();
-	if (!player || blocking ) return;
 	//idLib::common->Error("tapped out %d", blocking == player->ISBLOCKING);
 	idEntityPtr<idEntity>	projectileEnt = NULL;
 	idPhysics_Player physicsObj;
 	idVec3 dir;
 	idVec3 pushVel;
 	idEntity* ent;
-	idBounds ownerBounds = player->GetPhysics()->GetAbsBounds();
+	idBounds ownerBounds = atk->GetPhysics()->GetAbsBounds();
 	idDict dict;
 	dict.Init();
 	//idLib::common->Error("tapped out");
-	const idDict* test = gameLocal.FindEntityDefDict("projectile_rocket", false);
-	dict.Copy(*test);
+	dict.Copy(*cpy);
 	float spreadRad = DEG2RAD(0);
 	float ang = idMath::Sin(spreadRad * gameLocal.random.RandomFloat());
 	float spin = (float)DEG2RAD(360.0f) * gameLocal.random.RandomFloat();
 	
-	position = player->GetChestPosition();
-	idMat3 playerViewAxis = player->firstPersonViewAxis;
-	dir = playerViewAxis[0] + playerViewAxis[2] * (ang * idMath::Sin(spin)) - playerViewAxis[1] * (ang * idMath::Cos(spin));
+	position = atk->GetChestPosition();
+	idMat3 ViewAxis = atk->viewAxis;
+	dir = ViewAxis[0] + ViewAxis[2] * (ang * idMath::Sin(spin)) - ViewAxis[1] * (ang * idMath::Cos(spin));
 	dir.Normalize();
 	pushVel = physicsObj.GetPushedLinearVelocity();
 
@@ -3044,7 +3041,7 @@ void Cmd_Blast_f(const idCmdArgs& args) {
 		projectileEnt = NULL;
 	}
 	else {
-		dict.SetInt("instance", player->GetInstance());
+		dict.SetInt("instance", atk->GetInstance());
 		gameLocal.SpawnEntityDef(dict, &ent, false);
 	}
 
@@ -3055,7 +3052,7 @@ void Cmd_Blast_f(const idCmdArgs& args) {
 
 	assert(ent->IsType(idProjectile::GetClassType()));
 	proj = static_cast<idProjectile*>(ent);
-	proj->Create(player, position, dir, NULL, player->extraProjPassEntity);
+	proj->Create(atk, position, dir, NULL);
 	idBounds projBounds = proj->GetPhysics()->GetBounds().Rotate(proj->GetPhysics()->GetAxis());
 
 
@@ -3063,8 +3060,8 @@ void Cmd_Blast_f(const idCmdArgs& args) {
 	float   distance;
 	trace_t	tr;
 	//RAVEN BEGIN
-	if ((ownerBounds - projBounds).RayIntersection(position, playerViewAxis[0], distance)) {
-		start = position + distance * playerViewAxis[0];
+	if ((ownerBounds - projBounds).RayIntersection(position, ViewAxis[0], distance)) {
+		start = position + distance * ViewAxis[0];
 	}
 	//RAVEN END
 	else {
@@ -3073,50 +3070,33 @@ void Cmd_Blast_f(const idCmdArgs& args) {
 	// RAVEN BEGIN
 
 	// ddynerman: multiple clip worlds
-	gameLocal.Translation(player, tr, start, position, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL, player);
+	gameLocal.Translation(atk, tr, start, position, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL, atk);
 	// RAVEN END
 	position = tr.endpos;
 
 	proj->Launch(position, dir, pushVel, 0, 1.0f);
 
-	player->AddProjectilesFired(1);
+	//player->AddProjectilesFired(1);
 
 }
 
-void Cmd_kick_attack_f(const idCmdArgs& args) {
-	//kick hitscan - mostly rvweapon::hitscan
-	//Hitscan( dict, muzzleOrigin, muzzleAxis - x, num_attacks = 1, spread = 10);
-	//fix for multiple attacks - spread for the kick
-	int	areas[2];
-	idDict dict;
-	dict.Init();
-	const idDict* test = gameLocal.FindEntityDefDict("hitscan_blaster", false);
-	dict.Copy(*test);
-
+void Cmd_Blast_f(const idCmdArgs& args) {
 	idPlayer* player = gameLocal.GetLocalPlayer();
 	if (!player || blocking) return;
-	idVec3 position = player->GetChestPosition();
-	idMat3 playerViewAxis = player->firstPersonViewAxis;
+	const idDict* dict = gameLocal.FindEntityDefDict("projectile_rocket", false);
+	do_Blast_f(player, dict);
+}
 
-	idVec3 fxOrigin = position;
+void Cmd_kick_attack_f(const idCmdArgs& args) {
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player || blocking) return;
+	gameLocal.do_kick_f(player);
+}
 
-	float spreadRad = DEG2RAD(10);
-
-	float ang; 
-	float spin;
-	//RAVEN BEGIN
-	idVec3 dir;
-	for (int i = 0; i < 10; i++) {
-		ang = idMath::Sin(spreadRad * gameLocal.random.RandomFloat());
-		spin = (float)DEG2RAD(360.0f) * gameLocal.random.RandomFloat();
-		//RAVEN BEGIN
-		dir = playerViewAxis[0] + playerViewAxis[2] * (ang * idMath::Sin(spin)) - playerViewAxis[1] * (ang * idMath::Cos(spin));
-
-		dir.Normalize();
-
-		gameLocal.HitScan(dict, position, dir, fxOrigin, player, false, 2.0f, NULL, areas);
-	}
-	//RAVEN END
+void Cmd_punch_attack_f(const idCmdArgs& args) {
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player || blocking) return;
+	gameLocal.do_punch_f(player);
 }
 
 void Cmd_PlayerEmote_f( const idCmdArgs& args ) {
@@ -3412,6 +3392,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "locate",				Cmd_Locate_f,				CMD_FL_GAME,				"Get the player's position"); //mine
 // RITUAL END
 	cmdSystem->AddCommand( "blast",					Cmd_Blast_f,				CMD_FL_GAME,				"launch a Hadouken"); //mine
+	cmdSystem->AddCommand("punch_attack", Cmd_punch_attack_f, CMD_FL_GAME, "punch attack"); //mine
 	cmdSystem->AddCommand("kick_attack", Cmd_kick_attack_f, CMD_FL_GAME, "kick attack"); //mine
 	cmdSystem->AddCommand("blocking", Cmd_Blocking_f, CMD_FL_GAME, "block attacks"); //mine
 }

@@ -2616,20 +2616,22 @@ idProjectile* idAI::AttackRanged (
 	axis = ang.ToMat3();
 
 	for( i = 0; i < attack_count; i++ ) {
-		float angle;
+		/*float angle;
 		float spin;
 		
 		// spread the projectiles out
 		angle = idMath::Sin( attack_spread * gameLocal.random.RandomFloat() );
 		spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
 		dir = axis[ 0 ] + axis[ 2 ] * ( angle * idMath::Sin( spin ) ) - axis[ 1 ] * ( angle * idMath::Cos( spin ) );
-		dir.Normalize();
+		dir.Normalize();*/
 
 		if ( attack_hitscan ) {
-			gameLocal.HitScan( *attackDict, muzzleOrigin, dir, muzzleOrigin, this, false, combat.aggressiveScale );		
+			gameLocal.do_punch_f(this);
+			//gameLocal.HitScan( *attackDict, muzzleOrigin, dir, muzzleOrigin, this, false, combat.aggressiveScale );		
 		} else {
 			// launch the projectile
-			if ( !projectile.GetEntity() ) {
+			gameLocal.do_kick_f(this);
+			/*if (!projectile.GetEntity()) {
 				CreateProjectile( attackDict, muzzleOrigin, dir );
 			}
 			lastProjectile = projectile.GetEntity();
@@ -2638,7 +2640,7 @@ idProjectile* idAI::AttackRanged (
 			// Let the script manage projectiles if need be
 			ExecScriptFunction ( funcs.launch_projectile, lastProjectile );
 		
-			projectile = NULL;
+			projectile = NULL;*/
 		}
 	}
 

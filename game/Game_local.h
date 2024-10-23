@@ -454,6 +454,8 @@ public:
 	virtual void			Init( void );
 #endif
 // RAVEN END
+	virtual void			do_punch_f(idActor* atk);
+	virtual void			do_kick_f(idActor* atk);
 	virtual void			Shutdown( void );
 	virtual void			SetLocalClient( int clientNum );
 	virtual void			ThrottleUserInfo( void );

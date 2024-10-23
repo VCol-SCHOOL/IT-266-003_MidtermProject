@@ -5670,6 +5670,73 @@ static int SortClipModelsByEntity( const void* left, const void* right ) {
 	return entityNumLeft - entityNumRight;
 }
 
+void idGameLocal::do_kick_f(idActor* atk) {
+	//kick hitscan - mostly rvweapon::hitscan
+	//Hitscan( dict, muzzleOrigin, muzzleAxis - x, num_attacks = 1, spread = 10);
+	//fix for multiple attacks - spread for the kick
+	int	areas[2];
+	idDict dict;
+	dict.Init();
+	const idDict* test = gameLocal.FindEntityDefDict("hitscan_blaster", false);
+	dict.Copy(*test);
+
+	idVec3 position = atk->GetChestPosition();
+	idMat3 ViewAxis = atk->viewAxis;
+
+	idVec3 fxOrigin = position;
+
+	float spreadRad = DEG2RAD(10);
+
+	float ang;
+	float spin;
+	//RAVEN BEGIN
+	idVec3 dir;
+	for (int i = 0; i < 10; i++) {
+		ang = idMath::Sin(spreadRad * gameLocal.random.RandomFloat());
+		spin = (float)DEG2RAD(360.0f) * gameLocal.random.RandomFloat();
+		//RAVEN BEGIN
+		dir = ViewAxis[0] + ViewAxis[2] * (ang * idMath::Sin(spin)) - ViewAxis[1] * (ang * idMath::Cos(spin));
+
+		dir.Normalize();
+
+		gameLocal.HitScan(dict, position, dir, fxOrigin, atk, false, 2.0f, NULL, areas);
+	}
+	//RAVEN END
+}
+
+void idGameLocal::do_punch_f(idActor* atk) {
+	//kick hitscan - mostly rvweapon::hitscan
+	//Hitscan( dict, muzzleOrigin, muzzleAxis - x, num_attacks = 1, spread = 10);
+	//fix for multiple attacks - spread for the kick
+	int	areas[2];
+	idDict dict;
+	dict.Init();
+	const idDict* test = gameLocal.FindEntityDefDict("hitscan_blaster", false);
+	dict.Copy(*test);
+
+	idVec3 position = atk->GetChestPosition();
+	idMat3 ViewAxis = atk->viewAxis;
+
+	idVec3 fxOrigin = position;
+
+	float spreadRad = DEG2RAD(10);
+
+	float ang;
+	float spin;
+	//RAVEN BEGIN
+	idVec3 dir;
+	ang = idMath::Sin(spreadRad);
+	spin = (float)DEG2RAD(360.0f) * gameLocal.random.RandomFloat();
+	//RAVEN BEGIN
+	dir = ViewAxis[0] + ViewAxis[2] * (ang * idMath::Sin(spin)) - ViewAxis[1] * (ang * idMath::Cos(spin));
+
+	dir.Normalize();
+
+	gameLocal.HitScan(dict, position, dir, fxOrigin, atk, false, 4.0f, NULL, areas);
+}
+
+
+
 // RAVEN BEGIN
 /*
 ============
